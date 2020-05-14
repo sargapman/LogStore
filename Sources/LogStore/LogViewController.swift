@@ -1,6 +1,6 @@
 //
 //  LogViewController.swift
-//  
+//  LogStore Package
 //
 //  Created by Monty Boyer on 5/4/20.
 //

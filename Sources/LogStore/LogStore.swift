@@ -1,6 +1,6 @@
 //
 //  LogStore.swift
-//  LogStoreDevelopment
+//  LogStore Package
 //
 //  Created by Monty Boyer on 5/4/20.
 //  Copyright © 2020 Monty Boyer. All rights reserved.
