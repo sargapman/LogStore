@@ -3,6 +3,7 @@
 //  LogStore Package
 //
 //  Created by Monty Boyer on 5/4/20.
+//  Extended by Ned Hogan on 8/2/20 for the ability to email the log
 //
 
 import UIKit
@@ -18,7 +19,7 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .short
-        dateFormatter.locale = Locale(identifier: "en_UK")
+        dateFormatter.locale = Locale(identifier: "en_UK")  // "dd/mm/yyyy"
         return dateFormatter
     }()
 
@@ -30,7 +31,7 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
         
         // remove the separator between cells
-        // tableView.separatorStyle = .none
+        tableView.separatorStyle = .none
     }
     
     // MARK: - Table View Data Source
@@ -54,49 +55,67 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
         return cell
     }
     
-   public override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-   	let footerView = UIView()
-   	footerView.backgroundColor = UIColor.red
-   	footerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 100)
-   	let button = UIButton()
-   	button.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
-   	button.setTitle("Email Log", for: .normal)
-   	button.setTitleColor( UIColor.green, for: .normal)
-   	button.backgroundColor = UIColor.black
-   	button.addTarget(self, action: #selector(sendLog), for: .touchUpInside)
-   	footerView.addSubview(button)
-   	return footerView
-  }
-  
-  @objc func sendLog(sender: UIButton!) {
-    print("Button tapped")
-    sendEmail()
- }
- 
- func sendEmail() {
-    if MFMailComposeViewController.canSendMail() {
-        let mail = MFMailComposeViewController()
-        mail.mailComposeDelegate = self
-        //mail.setToRecipients(["nedhogan@me.com"])
-        mail.setSubject("Safely Solo Log")
-        mail.setMessageBody("<p>Here is your SafelySolo Log</p>", isHTML: true)
-        //add attachment
-        /*
-      	if let filePath = Bundle.main.path(forResource: "log", ofType: "json") {
-         	if let data = NSData(contentsOfFile: filePath) {
-            	mail.addAttachmentData(data as Data, mimeType: "application/json" , fileName: "log.json")
-         	}
-      	}
-        */
-        present(mail, animated: true)
-    } else {
-       print("Email Compose Failed")
+    public override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        // setup the footer view to include the Email Log button
+        let footerView = UIView()
+        footerView.backgroundColor = UIColor.red
+        footerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 100)
+        
+        // setup the button
+        let button = UIButton()
+        button.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
+        button.setTitle("Email Log", for: .normal)
+        button.setTitleColor( UIColor.green, for: .normal)
+        button.backgroundColor = UIColor.black
+        button.addTarget(self, action: #selector(sendLog), for: .touchUpInside)
+        
+        // add the button to the footer
+        footerView.addSubview(button)
+        
+        // center the button in the footer
+        footerView.addConstraint(NSLayoutConstraint(item: button, attribute: .centerX, relatedBy: .equal, toItem: footerView, attribute: .centerX, multiplier: 1, constant: 0))
+        footerView.addConstraint(NSLayoutConstraint(item: button, attribute: .centerY, relatedBy: .equal, toItem: footerView, attribute: .centerY, multiplier: 1, constant: 0))
+        
+        return footerView
     }
-  }
-
-  public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) 
-  {
-    controller.dismiss(animated: true)
-  }
-
+    
+    @objc func sendLog(sender: UIButton!) {
+        // print("Email log button tapped")
+        sendEmail()
+    }
+    
+    func sendEmail() {
+        // ensure we can send an email
+        if MFMailComposeViewController.canSendMail() {
+            
+            // setup for the mail view
+            let mail = MFMailComposeViewController()
+            mail.mailComposeDelegate = self
+            mail.setSubject("LogStore Log")
+            mail.setMessageBody("<p>Here is your debug log from \(LogStore.appName)</p>", isHTML: true)
+            
+            // add log data as an attachment
+            if let data = try? Data(contentsOf: FileManager.logFileURL) {
+                mail.addAttachmentData(data as Data, mimeType: "application/json" , fileName: "LogStore log.json")
+            }
+            
+            // display the email dialog
+            present(mail, animated: true)
+            
+        } else {
+            print("Email Compose Failed")
+        }
+    }
+    
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?)
+    {
+        // mail view done, dismiss it
+        controller.dismiss(animated: true)
+        
+        guard let error = error else {
+            return
+        }
+        printLog("Error from Mail view: \(error.localizedDescription)")
+    }
+    
 }

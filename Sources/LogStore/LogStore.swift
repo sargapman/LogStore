@@ -15,7 +15,8 @@ struct LogEntry: Codable {
 
 struct LogStore {
     static var log: [LogEntry] = []     // the single instance of the log array
-    
+    static var appName: String = "MyApp"    // the name of the app using this LogStore package
+
     static func setupLog() {
         // check for prior log data in the file system
         guard let data = try? Data(contentsOf: FileManager.logFileURL) else { return }
@@ -43,11 +44,15 @@ extension FileManager {
     static var logFileURL: URL {
         // construct a url (aka path) for the log file
         guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            fatalError()
+            fatalError("Log file URL contruction failed!")
         }
         
         return url.appendingPathComponent("log")
     }
+}
+
+public func setLoggingAppName(_ string: String) {
+    LogStore.appName = string
 }
 
 // a globally available function to print to the debug console & add an entry to the log array

@@ -2,7 +2,7 @@
 
 A tiny package to make log output accessible from within an iOS app.
 
-Based on Chapter 1. Debugging on the Go, of Build Location-Based Projects for iOS, by Dominik Hauser.
+Based on Appendix 1. Debugging on the Go, of Build Location-Based Projects for iOS, by Dominik Hauser.
 
 Some parts were filled in or improved by inspection of the LogStore repo at https://github.com/dasdom/LogStore
 
@@ -17,4 +17,12 @@ printLog("something to log")
 To view the log within your application there are a couple recommendations in the LogStore repo.  There is an implementation of one of those in the LogStoreDevelopment app.
 
 The log is stored in the users home directory of the iOS file system .  Currently there is no way to clear the log file other than deleting or replacing the app.
+
+The log can be emailed as an attachment named LogStore log.json.  The name of the app that is using the LogStore package can be included in the email.  Set the app name as:
+
+```swift
+import LogStore
+
+setLoggingAppName("MyAppName")
+```
 
