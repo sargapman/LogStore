@@ -6,8 +6,9 @@
 //
 
 import UIKit
+import MessageUI
 
-public class LogViewController: UITableViewController {
+public class LogViewController: UITableViewController, MFMailComposeViewControllerDelegate {
     
     // assign the log array in the LogStore type to this property of the table view controller
     let logItems = Array(LogStore.log.reversed())       // most recent items at beginning of the log
@@ -29,7 +30,7 @@ public class LogViewController: UITableViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
         
         // remove the separator between cells
-        tableView.separatorStyle = .none
+        // tableView.separatorStyle = .none
     }
     
     // MARK: - Table View Data Source
@@ -37,6 +38,8 @@ public class LogViewController: UITableViewController {
     public override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         logItems.count      // note this is an implicit return value
     }
+    
+    
     
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         // get a cell from the reusable pool
@@ -50,5 +53,50 @@ public class LogViewController: UITableViewController {
         cell.textLabel?.numberOfLines = 0       // enable text wrapping for long log entries
         return cell
     }
+    
+   public override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+   	let footerView = UIView()
+   	footerView.backgroundColor = UIColor.red
+   	footerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 100)
+   	let button = UIButton()
+   	button.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
+   	button.setTitle("Email Log", for: .normal)
+   	button.setTitleColor( UIColor.green, for: .normal)
+   	button.backgroundColor = UIColor.black
+   	button.addTarget(self, action: #selector(sendLog), for: .touchUpInside)
+   	footerView.addSubview(button)
+   	return footerView
+  }
+  
+  @objc func sendLog(sender: UIButton!) {
+    print("Button tapped")
+    sendEmail()
+ }
+ 
+ func sendEmail() {
+    if MFMailComposeViewController.canSendMail() {
+        let mail = MFMailComposeViewController()
+        mail.mailComposeDelegate = self
+        //mail.setToRecipients(["nedhogan@me.com"])
+        mail.setSubject("Safely Solo Log")
+        mail.setMessageBody("<p>Here is your SafelySolo Log</p>", isHTML: true)
+        //add attachment
+        /*
+      	if let filePath = Bundle.main.path(forResource: "log", ofType: "json") {
+         	if let data = NSData(contentsOfFile: filePath) {
+            	mail.addAttachmentData(data as Data, mimeType: "application/json" , fileName: "log.json")
+         	}
+      	}
+        */
+        present(mail, animated: true)
+    } else {
+       print("Email Compose Failed")
+    }
+  }
+
+  public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) 
+  {
+    controller.dismiss(animated: true)
+  }
 
 }
