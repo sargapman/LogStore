@@ -38,6 +38,12 @@ struct LogStore {
             }
         }
     }
+   
+    static func clearLog() {
+        // clear the log array then write that to the file
+        log = []
+        writeLog()
+    }
 }
 
 extension FileManager {

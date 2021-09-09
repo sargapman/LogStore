@@ -14,9 +14,11 @@ import LogStore
 
 printLog("something to log")
 ```
-To view the log within your application there are a couple recommendations in the LogStore repo.  There is an implementation of one of those in the LogStoreDevelopment app.
 
-The log is stored in the users home directory of the iOS file system .  Currently there is no way to clear the log file other than deleting or replacing the app.
+The log is stored in the users home directory of the iOS file system.
+
+To view the log within your application there is a recommendations in Debugging on the Go, Appendix 1.
+When the log is viewed there are buttons for Clear Log and Email Log.
 
 The log can be emailed as an attachment named LogStore log.json.  The name of the app that is using the LogStore package can be included in the email.  Set the app name as:
 

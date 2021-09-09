@@ -6,6 +6,7 @@
 //  Extended by Ned Hogan on 8/2/20 for the ability to email the log
 //
 
+
 import UIKit
 import MessageUI
 
@@ -28,7 +29,7 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
         super.viewDidLoad()
         
         // register a table view cell with an identifier
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "LogEntryCell")
         
         // remove the separator between cells
         tableView.separatorStyle = .none
@@ -44,7 +45,7 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
     
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         // get a cell from the reusable pool
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "LogEntryCell", for: indexPath)
 
         // create the cell text from the date string and the log text
         let logEntry = logItems[indexPath.row]
@@ -56,26 +57,40 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
     }
     
     public override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        // setup the footer view to include the Email Log button
+      // setup the footer view to include the Email Log & Clear Log buttons
         let footerView = UIView()
         footerView.backgroundColor = UIColor.red
         footerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 100)
         
-        // setup the button
-        let button = UIButton()
-        button.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
-        button.setTitle("Email Log", for: .normal)
-        button.setTitleColor( UIColor.green, for: .normal)
-        button.backgroundColor = UIColor.black
-        button.addTarget(self, action: #selector(sendLog), for: .touchUpInside)
-        
-        // add the button to the footer
-        footerView.addSubview(button)
-        
-        // center the button in the footer
-        footerView.addConstraint(NSLayoutConstraint(item: button, attribute: .centerX, relatedBy: .equal, toItem: footerView, attribute: .centerX, multiplier: 1, constant: 0))
-        footerView.addConstraint(NSLayoutConstraint(item: button, attribute: .centerY, relatedBy: .equal, toItem: footerView, attribute: .centerY, multiplier: 1, constant: 0))
-        
+        // setup the Email button
+        let emailButton = UIButton()
+        emailButton.frame = CGRect(x: 0, y: 0, width: self.view.frame.width/2, height: 50)
+        emailButton.setTitle("Email Log", for: .normal)
+        emailButton.setTitleColor( UIColor.green, for: .normal)
+        emailButton.backgroundColor = UIColor.black
+        emailButton.addTarget(self, action: #selector(sendLog), for: .touchUpInside)
+
+        // setup the Clear button
+        let clearButton = UIButton()
+        clearButton.frame = CGRect(x: 0, y: 0, width: self.view.frame.width/2, height: 50)
+        clearButton.setTitle("Clear Log", for: .normal)
+        clearButton.setTitleColor( UIColor.green, for: .normal)
+        clearButton.backgroundColor = UIColor.black
+        clearButton.addTarget(self, action: #selector(clearLog), for: .touchUpInside)
+     
+        // place the buttons in a horizontal stack
+        let buttonStackView = UIStackView(arrangedSubviews: [clearButton, emailButton])
+        buttonStackView.distribution = .fillEqually
+        buttonStackView.axis = .horizontal
+        buttonStackView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
+
+        // add the button stack to the footer
+        footerView.addSubview(buttonStackView)
+            
+        // center the stack in the footer
+        footerView.addConstraint(NSLayoutConstraint(item: buttonStackView, attribute: .centerX, relatedBy: .equal, toItem: footerView, attribute: .centerX, multiplier: 1, constant: 0))
+        footerView.addConstraint(NSLayoutConstraint(item: buttonStackView, attribute: .centerY, relatedBy: .equal, toItem: footerView, attribute: .centerY, multiplier: 1, constant: 0))
+           
         return footerView
     }
     
@@ -84,23 +99,36 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
         sendEmail()
     }
     
+   @objc func clearLog(sender: UIButton!) {
+       // print("Clear Log button tapped")
+      
+       // clear the log data & file
+       LogStore.clearLog()
+      
+       // load the table with the cleared log
+       tableView.reloadData()
+      
+       // dismiss this view
+       self.dismiss(animated: true, completion: nil)
+    }
+   
     func sendEmail() {
         // ensure we can send an email
         if MFMailComposeViewController.canSendMail() {
             
             // setup for the mail view
-            let mail = MFMailComposeViewController()
-            mail.mailComposeDelegate = self
-            mail.setSubject("LogStore Log")
-            mail.setMessageBody("<p>Here is your debug log from \(LogStore.appName)</p>", isHTML: true)
+            let mailVC = MFMailComposeViewController()
+            mailVC.mailComposeDelegate = self
+         mailVC.setSubject("LogStore Log")
+         mailVC.setMessageBody("<p>Here is your debug log from \(LogStore.appName)</p>", isHTML: true)
             
             // add log data as an attachment
             if let data = try? Data(contentsOf: FileManager.logFileURL) {
-                mail.addAttachmentData(data as Data, mimeType: "application/json" , fileName: "LogStore log.json")
+               mailVC.addAttachmentData(data as Data, mimeType: "application/json" , fileName: "LogStore log.json")
             }
             
             // display the email dialog
-            present(mail, animated: true)
+            present(mailVC, animated: true)
             
         } else {
             print("Email Compose Failed")

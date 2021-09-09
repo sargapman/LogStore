@@ -28,7 +28,7 @@ public class LogTrigger {
             
             // device quickly stopped after moving left?
             if data.acceleration.x < -5 {
-                printLog("x acceleration: \(data.acceleration.x)")
+                printLog("Log presented. x acceleration: \(data.acceleration.x)")
                 self?.presentLog()
             }
         }
