@@ -10,7 +10,7 @@ import Foundation
 
 struct LogEntry: Codable {
     let entryText: String
-    let entryTime: Date
+    let entryTime: String
 }
 
 struct LogStore {
@@ -66,8 +66,10 @@ public func printLog(_ string: String) {
     // print to the console
     print(string)
     
-    // create a log entry using current date & time and add it to the log
-    let entry = LogEntry(entryText: string, entryTime: Date())
+   // create a log entry using current date & time and add it to the log
+   let datetimeString = Date.adjustedDateAndTimeStringFromDate(date: Date(), returneGMT: false)
+  
+   let entry = LogEntry(entryText: string, entryTime: datetimeString)
     LogStore.log.append(entry)
     
     // try to save the log to file

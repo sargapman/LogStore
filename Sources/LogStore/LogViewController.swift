@@ -14,17 +14,7 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
     
     // assign the log array in the LogStore type to this property of the table view controller
     let logItems = Array(LogStore.log.reversed())       // most recent items at beginning of the log
-    
-    // conversion for the log entry time to a string
-    let dateFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .short
-        dateFormatter.timeStyle = .short
-        dateFormatter.locale = Locale(identifier: "en_UK")  // "dd/mm/yyyy"
-        return dateFormatter
-    }()
-
-    
+        
     public override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -49,8 +39,8 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
 
         // create the cell text from the date string and the log text
         let logEntry = logItems[indexPath.row]
-        let cellText = "\(dateFormatter.string(from: logEntry.entryTime)) \(logEntry.entryText)"
-                
+       let cellText = "\(logEntry.entryTime) \(logEntry.entryText)"
+
         cell.textLabel?.text = cellText
         cell.textLabel?.numberOfLines = 0       // enable text wrapping for long log entries
         return cell
@@ -74,7 +64,7 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
         let clearButton = UIButton()
         clearButton.frame = CGRect(x: 0, y: 0, width: self.view.frame.width/2, height: 50)
         clearButton.setTitle("Clear Log", for: .normal)
-        clearButton.setTitleColor( UIColor.green, for: .normal)
+        clearButton.setTitleColor( UIColor.red, for: .normal)
         clearButton.backgroundColor = UIColor.black
         clearButton.addTarget(self, action: #selector(clearLog), for: .touchUpInside)
      
