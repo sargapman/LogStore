@@ -63,12 +63,22 @@ public func setLoggingAppName(_ string: String) {
 
 // a globally available function to print to the debug console & add an entry to the log array
 public func printLog(_ string: String) {
-    // print to the console
+   
+   // conversion for the log entry time to a string
+   let dateFormatter: DateFormatter = {
+      let dateFormatter = DateFormatter()
+      dateFormatter.dateStyle = .short
+      dateFormatter.timeStyle = .short
+      dateFormatter.locale = Locale(identifier: "en_UK")  // "en_UK" : "dd/mm/yyyy, HH:mm", "en_us" : "mm/dd/yyyy", hh:mm AM/PM"
+      return dateFormatter
+   }()
+
+   // print to the console
     print(string)
     
    // create a log entry using current date & time and add it to the log
-   let datetimeString = Date.adjustedDateAndTimeStringFromDate(date: Date(), returneGMT: false)
-  
+   let datetimeString = "\(dateFormatter.string(from: Date()))"
+
    let entry = LogEntry(entryText: string, entryTime: datetimeString)
     LogStore.log.append(entry)
     
