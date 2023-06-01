@@ -9,56 +9,56 @@
 import Foundation
 
 struct LogEntry: Codable {
-    let entryText: String
-    let entryTime: String
+   let entry: String
+   let time: String
 }
 
 struct LogStore {
-    static var log: [LogEntry] = []     // the single instance of the log array
-    static var appName: String = "MyApp"    // the name of the app using this LogStore package
-
-    static func setupLog() {
-        // check for prior log data in the file system
-        guard let data = try? Data(contentsOf: FileManager.logFileURL) else { return }
-        
-        // decode the log data and prepare to add new entries to the log
-        if let potentialLog = try? JSONDecoder().decode([LogEntry].self, from: data) {
-            log = potentialLog
-        }
-    }
-    
-    static func writeLog() {
-        // write the current log data to the file system, in the background
-        DispatchQueue.global(qos: .background).async {
-            do {
-                let data = try JSONEncoder().encode(log)
-                try data.write(to: FileManager.logFileURL, options: .atomicWrite)
-            } catch {
-                printLog("write log error: \(error)")
-            }
-        }
-    }
+   static var log: [LogEntry] = []         // the single instance of the log array
+   static var appName: String = "MyApp"    // the name of the app using this LogStore package
    
-    static func clearLog() {
-        // clear the log array then write that to the file
-        log = []
-        writeLog()
-    }
+   static func setupLog() {
+      // check for prior log data in the file system
+      guard let data = try? Data(contentsOf: FileManager.logFileURL) else { return }
+      
+      // decode the log data and prepare to add new entries to the log
+      if let potentialLog = try? JSONDecoder().decode([LogEntry].self, from: data) {
+         log = potentialLog
+      }
+   }
+   
+   static func writeLog() {
+      // write the current log data to the file system, in the background
+      DispatchQueue.global(qos: .background).async {
+         do {
+            let data = try JSONEncoder().encode(log)
+            try data.write(to: FileManager.logFileURL, options: .atomicWrite)
+         } catch {
+            printLog("write log error: \(error)")
+         }
+      }
+   }
+   
+   static func clearLog() {
+      // clear the log array then write that to the file
+      log = []
+      writeLog()
+   }
 }
 
 extension FileManager {
-    static var logFileURL: URL {
-        // construct a url (aka path) for the log file
-        guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            fatalError("Log file URL contruction failed!")
-        }
-        
-        return url.appendingPathComponent("log")
-    }
+   static var logFileURL: URL {
+      // construct a url (aka path) for the log file
+      guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+         fatalError("Log file URL contruction failed!")
+      }
+      
+      return url.appendingPathComponent("log")
+   }
 }
 
 public func setLoggingAppName(_ string: String) {
-    LogStore.appName = string
+   LogStore.appName = string
 }
 
 // a globally available function to print to the debug console & add an entry to the log array
@@ -67,21 +67,27 @@ public func printLog(_ string: String) {
    // conversion for the log entry time to a string
    let dateFormatter: DateFormatter = {
       let dateFormatter = DateFormatter()
-      dateFormatter.dateStyle = .short
-      dateFormatter.timeStyle = .short
-      dateFormatter.locale = Locale(identifier: "en_UK")  // "en_UK" : "dd/mm/yyyy, HH:mm", "en_us" : "mm/dd/yyyy", hh:mm AM/PM"
+      dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
       return dateFormatter
    }()
-
+   
    // print to the console
-    print(string)
-    
+   print(string)
+   
    // create a log entry using current date & time and add it to the log
-   let datetimeString = "\(dateFormatter.string(from: Date()))"
+   // Display timezone in more familiar terms, e.g. CST, PDT
+   var commonTz = ""
+   if #available(iOS 15.0, *) {
+      commonTz = Date().formatted(.dateTime.timeZone())
+   } else {
 
-   let entry = LogEntry(entryText: string, entryTime: datetimeString)
-    LogStore.log.append(entry)
-    
-    // try to save the log to file
-    LogStore.writeLog()
+   }
+   
+   let datetimeString = "\(dateFormatter.string(from: Date())) \(commonTz)"
+   
+   let entry = LogEntry(entry: string, time: datetimeString)
+   LogStore.log.append(entry)
+   
+   // try to save the log to file
+   LogStore.writeLog()
 }
