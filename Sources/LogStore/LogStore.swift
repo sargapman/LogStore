@@ -16,6 +16,7 @@ struct LogEntry: Codable {
 struct LogStore {
    static var log: [LogEntry] = []         // the single instance of the log array
    static var appName: String = "MyApp"    // the name of the app using this LogStore package
+   static var maxLogEntries: Int = 1000
    
    static func setupLog() {
       // check for prior log data in the file system
@@ -43,6 +44,16 @@ struct LogStore {
       // clear the log array then write that to the file
       log = []
       writeLog()
+   }
+   
+   static func trimLogSize() {
+      let overCount: Int = log.count - maxLogEntries
+      if overCount > 0 {
+         // remove the oldest (first) entries in the log
+         for _ in 1...overCount {
+            log.removeFirst()
+         }
+      }
    }
 }
 
@@ -85,9 +96,13 @@ public func printLog(_ string: String) {
    
    let datetimeString = "\(dateFormatter.string(from: Date())) \(commonTz)"
    
+   // add the entry to the end of the log
    let entry = LogEntry(entry: string, time: datetimeString)
    LogStore.log.append(entry)
    
+   // constrain the log array size
+   LogStore.trimLogSize()
+
    // try to save the log to file
    LogStore.writeLog()
 }
