@@ -8,17 +8,19 @@
 
 import Foundation
 
-struct LogEntry: Codable {
+struct LogEntry: Codable, Sendable {
    let entry: String
    let time: String
 }
 
-struct LogStore {
-   static var log: [LogEntry] = []         // the single instance of the log array
-   static var appName: String = "MyApp"    // the name of the app using this LogStore package
-   static var maxLogEntries: Int = 1000
-   
-   static func setupLog() {
+actor LogStore {
+   static let shared = LogStore()
+
+   var log: [LogEntry] = []
+   var appName: String = "MyApp"
+   var maxLogEntries: Int = 1000
+
+   func setupLog() {
       // check for prior log data in the file system
       guard let data = try? Data(contentsOf: FileManager.logFileURL) else { return }
       
@@ -27,33 +29,47 @@ struct LogStore {
          log = potentialLog
       }
    }
-   
-   static func writeLog() {
-      // write the current log data to the file system, in the background
-      DispatchQueue.global(qos: .background).async {
-         do {
-            let data = try JSONEncoder().encode(log)
-            try data.write(to: FileManager.logFileURL, options: .atomicWrite)
-         } catch {
-            printLog("write log error: \(error)")
-         }
+
+   func writeLog() {
+      // write the current log data to the file system
+      do {
+         let data = try JSONEncoder().encode(log)
+         try data.write(to: FileManager.logFileURL, options: .atomicWrite)
+      } catch {
+         print("write log error: \(error)")
       }
    }
-   
-   static func clearLog() {
+
+   func clearLog() {
       // clear the log array then write that to the file
       log = []
       writeLog()
    }
-   
-   static func trimLogSize() {
+
+   func trimLogSize() {
       let overCount: Int = log.count - maxLogEntries
       if overCount > 0 {
-         // remove the oldest (first) entries in the log
-         for _ in 1...overCount {
-            log.removeFirst()
-         }
+         log.removeFirst(overCount)
       }
+   }
+
+   func addEntry(_ string: String, time: String) {
+      let entry = LogEntry(entry: string, time: time)
+      log.append(entry)
+      trimLogSize()
+      writeLog()
+   }
+
+   func getLog() -> [LogEntry] {
+      return log
+   }
+
+   func getAppName() -> String {
+      return appName
+   }
+
+   func setAppName(_ name: String) {
+      appName = name
    }
 }
 
@@ -69,7 +85,9 @@ extension FileManager {
 }
 
 public func setLoggingAppName(_ string: String) {
-   LogStore.appName = string
+   Task {
+      await LogStore.shared.setAppName(string)
+   }
 }
 
 // a globally available function to print to the debug console & add an entry to the log array
@@ -90,19 +108,12 @@ public func printLog(_ string: String) {
    var commonTz = ""
    if #available(iOS 15.0, *) {
       commonTz = Date().formatted(.dateTime.timeZone())
-   } else {
-
    }
-   
-   let datetimeString = "\(dateFormatter.string(from: Date())) \(commonTz)"
-   
-   // add the entry to the end of the log
-   let entry = LogEntry(entry: string, time: datetimeString)
-   LogStore.log.append(entry)
-   
-   // constrain the log array size
-   LogStore.trimLogSize()
 
-   // try to save the log to file
-   LogStore.writeLog()
+   let datetimeString = "\(dateFormatter.string(from: Date())) \(commonTz)"
+
+   // add the entry to the log via the actor (thread-safe)
+   Task {
+      await LogStore.shared.addEntry(string, time: datetimeString)
+   }
 }

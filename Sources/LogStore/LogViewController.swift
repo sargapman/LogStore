@@ -11,11 +11,11 @@ import UIKit
 import MessageUI
 
 public class LogViewController: UITableViewController, MFMailComposeViewControllerDelegate {
-   
-   // assign the log array in the LogStore type to this property of the table view controller
-   let logItems = Array(LogStore.log.reversed())       // most recent items at beginning of the log
-   
-   
+
+   // log snapshot loaded when the view appears
+   var logItems: [LogEntry] = []
+
+
    public override func viewDidLoad() {
       super.viewDidLoad()
       
@@ -24,6 +24,12 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
       
       // remove the separator between cells
       tableView.separatorStyle = .none
+
+      // load a snapshot of the log from the actor
+      Task {
+         logItems = await LogStore.shared.getLog().reversed()     // most recent items at beginning of the log
+         tableView.reloadData()
+      }
    }
    
    // MARK: - Table View Data Source
@@ -92,9 +98,12 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
       // print("Clear Log button tapped")
       
       // clear the log data & file
-      LogStore.clearLog()
-      
+      Task {
+         await LogStore.shared.clearLog()
+      }
+
       // load the table with the cleared log
+      logItems = []
       tableView.reloadData()
       
       // dismiss this view
@@ -110,7 +119,7 @@ public class LogViewController: UITableViewController, MFMailComposeViewControll
          mailVC.mailComposeDelegate = self
          //mail.setToRecipients(["nedhogan@me.com"])
          mailVC.setSubject("LogStore Log")
-         mailVC.setMessageBody("<p>Here is your debug log from \(LogStore.appName)</p>", isHTML: true)
+         mailVC.setMessageBody("<p>Here is your debug log from \(LogStore.shared.getAppName())</p>", isHTML: true)
          
          // add log data as an attachment
          if let data = try? Data(contentsOf: FileManager.logFileURL) {

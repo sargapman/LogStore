@@ -15,7 +15,9 @@ public class LogTrigger {
     public init(in window: UIWindow?) {
         
         // init the log, getting existing log if possible
-        LogStore.setupLog()
+        Task {
+            await LogStore.shared.setupLog()
+        }
 
         self.window = window
         
